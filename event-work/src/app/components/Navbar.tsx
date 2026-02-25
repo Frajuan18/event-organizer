@@ -1,8 +1,46 @@
+// main/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Ticket, LogOut, LayoutDashboard, Menu, X, ChevronDown, User, Settings } from 'lucide-react';
-import { Button } from './ui/button';
-import { useAuth } from '../../context/AuthContext';
+import { Ticket, LogOut, LayoutDashboard, Menu, X, ChevronDown, Settings, User } from 'lucide-react';
+
+// Button component (create this if you don't have it)
+const Button = ({ children, variant, onClick, className, ...props }) => {
+  const baseClasses = "px-4 py-2 font-bold rounded-xl transition-all duration-200";
+  const variantClasses = variant === 'ghost' 
+    ? 'bg-transparent hover:bg-zinc-100' 
+    : 'bg-black text-white hover:bg-zinc-800';
+  
+  return (
+    <button 
+      className={`${baseClasses} ${variantClasses} ${className}`}
+      onClick={onClick}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+// Mock Auth Context (replace with your actual auth context)
+const useAuth = () => {
+  // This is a mock - replace with your actual auth logic
+  const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Mock sign out function
+  const signOut = async () => {
+    setUser(null);
+    setUserProfile(null);
+  };
+
+  // For demo purposes, you can uncomment this to simulate a logged-in user
+  // useEffect(() => {
+  //   setUser({ email: 'demo@example.com' });
+  //   setUserProfile({ name: 'Demo User', role: 'organizer' });
+  // }, []);
+
+  return { user, userProfile, signOut };
+};
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -68,11 +106,11 @@ export default function Navbar() {
                     }`}
                   >
                     <div className="h-10 w-10 rounded-xl bg-black flex items-center justify-center text-white font-bold text-lg border-2 border-black">
-                      {(userProfile?.name || user.email).charAt(0).toUpperCase()}
+                      {(userProfile?.name || user?.email || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div className="text-left">
                       <p className="text-sm font-bold leading-none text-black">
-                        {userProfile?.name || 'User'}
+                        {userProfile?.name || user?.email?.split('@')[0] || 'User'}
                       </p>
                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
                         {userProfile?.role || 'Member'}
@@ -86,13 +124,16 @@ export default function Navbar() {
                     <div className="absolute right-0 mt-3 w-64 bg-white border-4 border-black rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in duration-200">
                       <div className="p-5 border-b-2 border-zinc-100 bg-zinc-50/50">
                         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Signed in as</p>
-                        <p className="text-sm font-bold truncate mt-1 text-black">{user.email}</p>
+                        <p className="text-sm font-bold truncate mt-1 text-black">{user?.email || 'user@example.com'}</p>
                       </div>
                       
                       <div className="p-2">
                         {userProfile?.role === 'organizer' ? (
                           <button 
-                            onClick={() => navigate('/organizer/dashboard')}
+                            onClick={() => {
+                              navigate('/organizer/dashboard');
+                              setUserMenuOpen(false);
+                            }}
                             className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-black hover:text-white transition-colors group"
                           >
                             <LayoutDashboard className="h-5 w-5" />
@@ -100,7 +141,10 @@ export default function Navbar() {
                           </button>
                         ) : (
                           <button 
-                            onClick={() => navigate('/my-tickets')}
+                            onClick={() => {
+                              navigate('/my-tickets');
+                              setUserMenuOpen(false);
+                            }}
                             className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-black hover:text-white transition-colors"
                           >
                             <Ticket className="h-5 w-5" />
@@ -108,7 +152,13 @@ export default function Navbar() {
                           </button>
                         )}
                         
-                        <button className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-zinc-100 transition-colors">
+                        <button 
+                          onClick={() => {
+                            navigate('/settings');
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-zinc-100 transition-colors"
+                        >
                           <Settings className="h-5 w-5" />
                           <span className="font-bold text-zinc-600">Settings</span>
                         </button>
@@ -178,27 +228,43 @@ export default function Navbar() {
               <div className="space-y-6">
                 <div className="flex items-center space-x-4 p-4 bg-zinc-50 rounded-3xl border-2 border-black/5">
                   <div className="h-12 w-12 rounded-2xl bg-black flex items-center justify-center text-white font-bold text-xl">
-                    {(userProfile?.name || user.email).charAt(0).toUpperCase()}
+                    {(userProfile?.name || user?.email || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="font-bold text-lg truncate text-black">{userProfile?.name || 'User'}</p>
+                    <p className="font-bold text-lg truncate text-black">{userProfile?.name || user?.email?.split('@')[0] || 'User'}</p>
                     <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{userProfile?.role || 'Member'}</p>
                   </div>
                 </div>
 
                 <nav className="flex flex-col space-y-2">
                   <button 
-                    onClick={() => navigate(userProfile?.role === 'organizer' ? '/organizer/dashboard' : '/my-tickets')} 
+                    onClick={() => {
+                      navigate(userProfile?.role === 'organizer' ? '/organizer/dashboard' : '/my-tickets');
+                      setMobileOpen(false);
+                    }} 
                     className="flex items-center space-x-3 w-full text-left p-4 text-xl font-bold rounded-2xl hover:bg-zinc-100 transition-all"
                   >
-                    {userProfile?.role === 'organizer' ? <LayoutDashboard /> : <Ticket />}
+                    {userProfile?.role === 'organizer' ? <LayoutDashboard className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
                     <span>{userProfile?.role === 'organizer' ? 'Dashboard' : 'My Tickets'}</span>
                   </button>
                   <button 
-                    onClick={handleSignOut} 
+                    onClick={() => {
+                      navigate('/settings');
+                      setMobileOpen(false);
+                    }} 
+                    className="flex items-center space-x-3 w-full text-left p-4 text-xl font-bold rounded-2xl hover:bg-zinc-100 transition-all"
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handleSignOut();
+                      setMobileOpen(false);
+                    }} 
                     className="flex items-center space-x-3 w-full text-left p-4 text-xl font-bold text-red-500 rounded-2xl hover:bg-red-50 transition-all"
                   >
-                    <LogOut />
+                    <LogOut className="h-5 w-5" />
                     <span>Sign Out</span>
                   </button>
                 </nav>
@@ -206,13 +272,19 @@ export default function Navbar() {
             ) : (
               <div className="flex flex-col space-y-4">
                 <Button 
-                  onClick={() => navigate('/login')} 
+                  onClick={() => {
+                    navigate('/login');
+                    setMobileOpen(false);
+                  }} 
                   className="w-full py-8 rounded-2xl border-4 border-black bg-white text-black font-bold text-xl hover:bg-zinc-50"
                 >
                   Login
                 </Button>
                 <Button 
-                  onClick={() => navigate('/signup')} 
+                  onClick={() => {
+                    navigate('/signup');
+                    setMobileOpen(false);
+                  }} 
                   className="w-full py-8 rounded-2xl bg-black text-white font-bold text-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]"
                 >
                   Sign Up
