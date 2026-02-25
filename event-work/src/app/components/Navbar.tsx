@@ -1,9 +1,9 @@
 // main/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Ticket, LogOut, LayoutDashboard, Menu, X, ChevronDown, Settings, User } from 'lucide-react';
+import { Ticket, LogOut, LayoutDashboard, Menu, X, ChevronDown, Settings, Home, Calendar, Star, Mail } from 'lucide-react';
 
-// Button component (create this if you don't have it)
+// Button component
 const Button = ({ children, variant, onClick, className, ...props }) => {
   const baseClasses = "px-4 py-2 font-bold rounded-xl transition-all duration-200";
   const variantClasses = variant === 'ghost' 
@@ -23,20 +23,18 @@ const Button = ({ children, variant, onClick, className, ...props }) => {
 
 // Mock Auth Context (replace with your actual auth context)
 const useAuth = () => {
-  // This is a mock - replace with your actual auth logic
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
-  // Mock sign out function
   const signOut = async () => {
     setUser(null);
     setUserProfile(null);
   };
 
-  // For demo purposes, you can uncomment this to simulate a logged-in user
+  // For demo - uncomment to test logged-in state
   // useEffect(() => {
   //   setUser({ email: 'demo@example.com' });
-  //   setUserProfile({ name: 'Demo User', role: 'organizer' });
+  //   setUserProfile({ name: 'Demo User', role: 'user' });
   // }, []);
 
   return { user, userProfile, signOut };
@@ -49,6 +47,14 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const menuRef = useRef(null);
+
+  // Navigation links
+  const navLinks = [
+    { name: 'Home', path: '/', icon: <Home className="w-4 h-4" /> },
+    { name: 'Events', path: '/events', icon: <Calendar className="w-4 h-4" /> },
+    { name: 'Features', path: '/#features', icon: <Star className="w-4 h-4" /> },
+    { name: 'Contact', path: '/#contact', icon: <Mail className="w-4 h-4" /> }
+  ];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -76,6 +82,12 @@ export default function Navbar() {
     }
   };
 
+  const isActivePath = (path) => {
+    if (path === '/') return location.pathname === '/';
+    if (path.includes('#')) return false; // Don't highlight hash links
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b-4 border-black font-['Fredoka']">
@@ -94,11 +106,29 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation Links */}
+            <div className="hidden lg:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition-all ${
+                    isActivePath(link.path)
+                      ? 'bg-black text-white'
+                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-black'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.name}</span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop Auth Section */}
             <div className="hidden lg:flex items-center space-x-4">
               {user ? (
                 <div className="relative" ref={menuRef}>
-                  {/* Premium User Trigger */}
+                  {/* User Menu Trigger */}
                   <button 
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className={`flex items-center space-x-3 p-1.5 pr-4 rounded-2xl border-2 transition-all duration-200 ${
@@ -119,7 +149,7 @@ export default function Navbar() {
                     <ChevronDown className={`h-4 w-4 text-black transition-transform duration-300 ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Fancy Dropdown Menu */}
+                  {/* User Dropdown Menu */}
                   {userMenuOpen && (
                     <div className="absolute right-0 mt-3 w-64 bg-white border-4 border-black rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in duration-200">
                       <div className="p-5 border-b-2 border-zinc-100 bg-zinc-50/50">
@@ -224,8 +254,28 @@ export default function Navbar() {
           </div>
 
           <div className="p-8 space-y-6">
+            {/* Mobile Navigation Links */}
+            <nav className="space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center space-x-3 w-full text-left p-4 text-xl font-bold rounded-2xl transition-all ${
+                    isActivePath(link.path)
+                      ? 'bg-black text-white'
+                      : 'hover:bg-zinc-100 text-black'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.name}</span>
+                </Link>
+              ))}
+            </nav>
+
+            {/* Mobile User Section */}
             {user ? (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex items-center space-x-4 p-4 bg-zinc-50 rounded-3xl border-2 border-black/5">
                   <div className="h-12 w-12 rounded-2xl bg-black flex items-center justify-center text-white font-bold text-xl">
                     {(userProfile?.name || user?.email || 'U').charAt(0).toUpperCase()}
@@ -236,7 +286,7 @@ export default function Navbar() {
                   </div>
                 </div>
 
-                <nav className="flex flex-col space-y-2">
+                <div className="space-y-2">
                   <button 
                     onClick={() => {
                       navigate(userProfile?.role === 'organizer' ? '/organizer/dashboard' : '/my-tickets');
@@ -247,6 +297,7 @@ export default function Navbar() {
                     {userProfile?.role === 'organizer' ? <LayoutDashboard className="h-5 w-5" /> : <Ticket className="h-5 w-5" />}
                     <span>{userProfile?.role === 'organizer' ? 'Dashboard' : 'My Tickets'}</span>
                   </button>
+                  
                   <button 
                     onClick={() => {
                       navigate('/settings');
@@ -257,6 +308,7 @@ export default function Navbar() {
                     <Settings className="h-5 w-5" />
                     <span>Settings</span>
                   </button>
+                  
                   <button 
                     onClick={() => {
                       handleSignOut();
@@ -267,7 +319,7 @@ export default function Navbar() {
                     <LogOut className="h-5 w-5" />
                     <span>Sign Out</span>
                   </button>
-                </nav>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col space-y-4">
